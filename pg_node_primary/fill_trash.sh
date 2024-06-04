@@ -1,8 +1,2 @@
 #!/bin/bash
-cd /data
-touch trash
-until ! echo "0" >> trash
-do
-	:
-done
-exit 0
+fallocate -l $(df -k | grep -e "/data/postgres$" | awk '{print $4}')'K' /data/postgres/trashfile

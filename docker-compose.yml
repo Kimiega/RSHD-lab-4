@@ -14,24 +14,19 @@ services:
       - "6666:5432"
     volumes:
       - db-volume-primary:/data/postgres
-      - ./pg_node_primary/pg_primary_init.sql:/docker-entrypoint-initdb.d/00_init.sql
+      - ./pg_node_primary/postgresql.conf:/data/postgresql.conf
       - ./pg_node_primary/fill_trash.sh:/fill_trash.sh
+      - ./pg_node_primary/remove_trash.sh:/remove_trash.sh
+      - failover_volume:/failover_dir
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
       POSTGRES_PASSWORD: password
       PGDATA: /data/postgres
-      POSTGRES_HOST_AUTH_METHOD: "md5\nhost replication all 0.0.0.0/0 md5"
+      POSTGRES_HOST_AUTH_METHOD: "md5\nhost replication all all md5"
       POSTGRES_INITDB_ARGS: "--auth-host=md5"
     command: |
-      postgres 
-      -c wal_level=replica 
-      -c hot_standby=on 
-      -c max_wal_senders=10 
-      -c max_replication_slots=10 
-      -c hot_standby_feedback=on
-      &&
-      bash
+      postgres -c 'config_file=/data/postgresql.conf'
     networks:
       - pg-network
 
@@ -44,18 +39,20 @@ services:
       - "7777:5432"
     volumes:
       - db-volume-replica:/data/postgres
+      - failover_volume:/failover_dir
     environment:
-      PGUSER: replicator
-      PGPASSWORD: replicator_password
+      PGUSER: postgres
+      PGPASSWORD: password
       PGDATA: /data/postgres
     command: |
       bash -c "
-      until pg_basebackup --pgdata=/data/postgres -R --slot=replication_slot --checkpoint=fast --host=postgres_primary --port=5432
+      until pg_basebackup --pgdata=/data/postgres -R --slot=replication_slot -C --checkpoint=fast --host=postgres_primary --port=5432
       do
       echo 'Waiting for primary to connect...'
       sleep 1s
       done
       echo 'Backup done, starting replica...'
+      bash -c `echo -e \"promote_trigger_file = '/failover_dir/down.trg'\" >> /data/postgres/postgresql.conf`
       chown -Rf postgres:postgres /data/postgres
       chmod -R 700 /data/postgres
       su -p postgres -c postgres
@@ -64,6 +61,7 @@ services:
       - pg-network
     depends_on:
       - postgres_primary
+
   pgpool:
     image: pgpool/pgpool:4.4.3
     container_name: pgpool-container
@@ -73,9 +71,22 @@ services:
       - "9999:9999"
     networks:
       - pg-network
+    environment:
+      PG_USERNAME: postgres
+      PG_PASSWORD: password
+    command: |
+      bash -c "
+      until pg_isready --dbname=postgres --host=postgres_primary --port=5432 --quiet --username=postgres && pg_isready --dbname=postgres --host=postgres_replica --port=5432 --quiet --username=postgres
+      do
+      echo 'Waiting for starting both nodes to connect...'
+      sleep 1s
+      done
+      /opt/pgpool-II/bin/start.sh
+      "
     volumes:
       - ./pgpool2/pgpool.conf:/config/pgpool.conf
-      - ./pgpool2/pool_passwd:/opt/pgpool-II/etc/pool_passwd
+      - ./pgpool2/failover.sh:/failover.sh
+      - failover_volume:/failover_dir
     depends_on:
       - postgres_primary
       - postgres_replica
@@ -98,5 +109,12 @@ volumes:
     driver: local
     driver_opts:
       o: "size=1g,uid=1001"
+      device: tmpfs
+      type: tmpfs
+  failover_volume:
+    name: failover_volume
+    driver: local
+    driver_opts:
+      o: "size=1m,uid=1002"
       device: tmpfs
       type: tmpfs

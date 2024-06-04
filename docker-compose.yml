@@ -2,7 +2,7 @@ version: "3.8"
 
 x-postgres-common:
   &postgres-common
-  image: postgres:14-alpine
+  image: postgres:15-alpine
 
 services:
   postgres_primary:
@@ -13,12 +13,15 @@ services:
     ports:
       - "6666:5432"
     volumes:
-      - db-volume-primary:/data/postgres
-      - ./pg_node_primary/postgresql.conf:/data/postgresql.conf
+      - db-volume-primary:/data
+      - ./pg_node_primary/postgresql.conf:/postgresql.conf
       - ./pg_node_primary/fill_trash.sh:/fill_trash.sh
       - ./pg_node_primary/remove_trash.sh:/remove_trash.sh
       - failover_volume:/failover_dir
+      - ./pg_node_primary/start.sh:/start.sh
     environment:
+      PGUSER: postgres
+      PGPASSWORD: password
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
       POSTGRES_PASSWORD: password
@@ -26,7 +29,7 @@ services:
       POSTGRES_HOST_AUTH_METHOD: "md5\nhost replication all all md5"
       POSTGRES_INITDB_ARGS: "--auth-host=md5"
     command: |
-      postgres -c 'config_file=/data/postgresql.conf'
+      postgres -c 'config_file=/postgresql.conf'
     networks:
       - pg-network
 
@@ -90,6 +93,15 @@ services:
     depends_on:
       - postgres_primary
       - postgres_replica
+
+  volume_holder:
+    image: alpine
+    container_name: volume_holder
+    command: tail -F anything
+    volumes:
+      - db-volume-primary:/primary
+      - db-volume-replica:/replica
+      - failover_volume:/failover
 
 
 networks:

@@ -2,7 +2,9 @@
 
 set -e
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" && cd ..
+
+. libsh/color.sh --source-only
 
 sql() {
     DDB_PG_USER="postgres"
@@ -16,18 +18,24 @@ worker() {
     ID="$1"
     TABLE="worker_${ID}_note"
 
-    echo "[client#$ID] Starting worker..."
+    coloprintln $Blue "[client#$ID] Starting worker..."
 
-    echo "[client#$ID] Creating table '$TABLE'..."
-    sql "CREATE TABLE $TABLE (id serial PRIMARY KEY, content text NOT NULL);"
+    coloprintln $Blue "[client#$ID] Creating table '$TABLE'..."
+    sql "CREATE TABLE IF NOT EXISTS $TABLE (id serial PRIMARY KEY, content text NOT NULL);"
 
     for j in $(seq 2 8); do
-        echo "[client#$ID] Inserting into '$TABLE'..."    
+        coloprintln $Blue "[client#$ID] Inserting into '$TABLE'..."    
         sql "INSERT INTO $TABLE (content) VALUES ('Another row at $TABLE');" &
+
+        sleep 1s
+
+        coloprintln $Blue "[client#$ID] Selecting any from '$TABLE'..."    
+        sql "SELECT * FROM $TABLE;" &
+
         sleep 1s
     done
 
-    echo "[client#$ID] Done!"
+    coloprintln $Blue "[client#$ID] Done!"
 }
 
 for i in $(seq 1 8); do

@@ -9,11 +9,11 @@ services:
       - ddb-network
     volumes:
       - ddb-volume-primary:/data
-      - ./pg_node_primary/postgresql.conf:/postgresql.conf
-      - ./pg_node_primary/fill_trash.sh:/fill_trash.sh
-      - ./pg_node_primary/remove_trash.sh:/remove_trash.sh
+      - ./primary/postgresql.conf:/postgresql.conf
+      - ./primary/fill_trash.sh:/fill_trash.sh
+      - ./primary/remove_trash.sh:/remove_trash.sh
       - ddb-volume-failover:/failover_dir
-      - ./pg_node_primary/start.sh:/start.sh
+      - ./primary/start.sh:/start.sh
     environment:
       PGUSER: postgres
       PGPASSWORD: password
@@ -76,8 +76,8 @@ services:
       /opt/pgpool-II/bin/start.sh
       "
     volumes:
-      - ./pgpool2/pgpool.conf:/config/pgpool.conf
-      - ./pgpool2/failover.sh:/failover.sh
+      - ./balancer/pgpool.conf:/config/pgpool.conf
+      - ./balancer/failover.sh:/failover.sh
       - ddb-volume-failover:/failover_dir
     depends_on:
       - primary

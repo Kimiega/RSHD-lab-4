@@ -1,23 +1,18 @@
-version: "3.8"
-
-x-postgres-common:
-  &postgres-common
-  image: postgres:15-alpine
-
 services:
-  postgres_primary:
-    <<: *postgres-common
-    container_name: postgres-container-primary
-    expose:
-      - "5432"
+
+  primary:
+    image: postgres:15-alpine
+    container_name: ddb-postgres-primary
     ports:
       - "6666:5432"
+    networks:
+      - ddb-network
     volumes:
-      - db-volume-primary:/data
+      - ddb-volume-primary:/data
       - ./pg_node_primary/postgresql.conf:/postgresql.conf
       - ./pg_node_primary/fill_trash.sh:/fill_trash.sh
       - ./pg_node_primary/remove_trash.sh:/remove_trash.sh
-      - failover_volume:/failover_dir
+      - ddb-volume-failover:/failover_dir
       - ./pg_node_primary/start.sh:/start.sh
     environment:
       PGUSER: postgres
@@ -30,26 +25,24 @@ services:
       POSTGRES_INITDB_ARGS: "--auth-host=md5"
     command: |
       postgres -c 'config_file=/postgresql.conf'
-    networks:
-      - pg-network
 
-  postgres_replica:
-    <<: *postgres-common
-    container_name: postgres-container-replica
-    expose:
-      - "5432"
+  standby:
+    image: postgres:15-alpine
+    container_name: ddb-postgres-standby
     ports:
       - "7777:5432"
+    networks:
+      - ddb-network
     volumes:
-      - db-volume-replica:/data/postgres
-      - failover_volume:/failover_dir
+      - ddb-volume-standby:/data/postgres
+      - ddb-volume-failover:/failover_dir
     environment:
       PGUSER: postgres
       PGPASSWORD: password
       PGDATA: /data/postgres
     command: |
       bash -c "
-      until pg_basebackup --pgdata=/data/postgres -R --slot=replication_slot -C --checkpoint=fast --host=postgres_primary --port=5432
+      until pg_basebackup --pgdata=/data/postgres -R --slot=replication_slot -C --checkpoint=fast --host=standby --port=5432
       do
       echo 'Waiting for primary to connect...'
       sleep 1s
@@ -60,26 +53,22 @@ services:
       chmod -R 700 /data/postgres
       su -p postgres -c postgres
       "
-    networks:
-      - pg-network
     depends_on:
-      - postgres_primary
+      - primary
 
-  pgpool:
+  balancer:
     image: pgpool/pgpool:4.4.3
-    container_name: pgpool-container
-    expose:
-      - "9999"
+    container_name: ddb-pgpool
     ports:
       - "9999:9999"
     networks:
-      - pg-network
+      - ddb-network
     environment:
       PG_USERNAME: postgres
       PG_PASSWORD: password
     command: |
       bash -c "
-      until pg_isready --dbname=postgres --host=postgres_primary --port=5432 --quiet --username=postgres && pg_isready --dbname=postgres --host=postgres_replica --port=5432 --quiet --username=postgres
+      until pg_isready --dbname=postgres --host=postgres_primary --port=5432 --quiet --username=postgres && pg_isready --dbname=postgres --host=standby --port=5432 --quiet --username=postgres
       do
       echo 'Waiting for starting both nodes to connect...'
       sleep 1s
@@ -89,42 +78,44 @@ services:
     volumes:
       - ./pgpool2/pgpool.conf:/config/pgpool.conf
       - ./pgpool2/failover.sh:/failover.sh
-      - failover_volume:/failover_dir
+      - ddb-volume-failover:/failover_dir
     depends_on:
-      - postgres_primary
-      - postgres_replica
+      - primary
+      - standby
 
-  volume_holder:
+  filesystems:
     image: alpine
-    container_name: volume_holder
+    container_name: ddb-filesystems
     command: tail -F anything
     volumes:
-      - db-volume-primary:/primary
-      - db-volume-replica:/replica
-      - failover_volume:/failover
-
+      - ddb-volume-primary:/primary
+      - ddb-volume-standby:/replica
+      - ddb-volume-failover:/failover
 
 networks:
-  pg-network:
+  ddb-network:
     driver: bridge
 
 volumes:
-  db-volume-primary:
-    name: postgres-pg-primary
+
+  ddb-volume-primary:
+    name: ddb-volume-primary
     driver: local
     driver_opts:
       o: "size=1g,uid=1000"
       device: tmpfs
       type: tmpfs
-  db-volume-replica:
-    name: postgres-pg-replica
+
+  ddb-volume-standby:
+    name: ddb-volume-standby
     driver: local
     driver_opts:
       o: "size=1g,uid=1001"
       device: tmpfs
       type: tmpfs
-  failover_volume:
-    name: failover_volume
+
+  ddb-volume-failover:
+    name: ddb-volume-failover
     driver: local
     driver_opts:
       o: "size=1m,uid=1002"

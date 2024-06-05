@@ -9,10 +9,10 @@ services:
       - ddb-network
     volumes:
       - ddb-volume-primary:/data
+      - ddb-volume-failover:/failover_dir
       - ./primary/postgresql.conf:/postgresql.conf
       - ./primary/fill_trash.sh:/fill_trash.sh
       - ./primary/remove_trash.sh:/remove_trash.sh
-      - ddb-volume-failover:/failover_dir
       - ./primary/start.sh:/start.sh
     environment:
       PGUSER: postgres
@@ -76,9 +76,9 @@ services:
       /opt/pgpool-II/bin/start.sh
       "
     volumes:
+      - ddb-volume-failover:/failover_dir
       - ./balancer/pgpool.conf:/config/pgpool.conf
       - ./balancer/failover.sh:/failover.sh
-      - ddb-volume-failover:/failover_dir
     depends_on:
       - primary
       - standby

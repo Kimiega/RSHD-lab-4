@@ -71,7 +71,7 @@ On_IPurple='\033[0;105m'  # Purple
 On_ICyan='\033[0;106m'    # Cyan
 On_IWhite='\033[0;107m'   # White
 
-coloprintln() {
+coprintln() {
     COLOR="$1"
     TEXT="$2"
     printf "${COLOR}${TEXT}${Color_Off}\n"

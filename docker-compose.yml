@@ -14,6 +14,7 @@ services:
       - ./primary/falloc.sh:/script/falloc.sh
       - ./primary/ffree.sh:/script/ffree.sh
       - ./primary/start.sh:/script/start.sh
+      - ./criminal/oom.sh:/script/oom.sh
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres

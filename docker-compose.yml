@@ -10,21 +10,27 @@ services:
     volumes:
       - ddb-volume-primary:/data
       - ddb-volume-failover:/failover_dir
-      - ./primary/postgresql.conf:/postgresql.conf
+      - ./primary/postgresql.conf:/data/postgres/postgresql.conf
       - ./primary/fill_trash.sh:/fill_trash.sh
       - ./primary/remove_trash.sh:/remove_trash.sh
       - ./primary/start.sh:/start.sh
     environment:
-      PGUSER: postgres
-      PGPASSWORD: password
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
       POSTGRES_PASSWORD: password
-      PGDATA: /data/postgres
       POSTGRES_HOST_AUTH_METHOD: "md5\nhost replication all all md5"
       POSTGRES_INITDB_ARGS: "--auth-host=md5"
-    command: |
-      postgres -c 'config_file=/postgresql.conf'
+      PGUSER: postgres
+      PGPASSWORD: password
+      PGDATA: /data/postgres
+    command: postgres -c 'config_file=/data/postgres/postgresql.conf'
+    depends_on:
+      - filesystems
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   standby:
     image: postgres:15-alpine
@@ -37,24 +43,21 @@ services:
       - ddb-volume-standby:/data/postgres
       - ddb-volume-failover:/failover_dir
     environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: password
       PGUSER: postgres
       PGPASSWORD: password
       PGDATA: /data/postgres
-    command: |
-      bash -c "
-      until pg_basebackup --pgdata=/data/postgres -R --slot=replication_slot -C --checkpoint=fast --host=standby --port=5432
-      do
-      echo 'Waiting for primary to connect...'
-      sleep 1s
-      done
-      echo 'Backup done, starting replica...'
-      bash -c `echo -e \"promote_trigger_file = '/failover_dir/down.trg'\" >> /data/postgres/postgresql.conf`
-      chown -Rf postgres:postgres /data/postgres
-      chmod -R 700 /data/postgres
-      su -p postgres -c postgres
-      "
+    command: postgres -c 'config_file=/data/postgres/postgresql.conf'
     depends_on:
-      - primary
+      primary:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   balancer:
     image: pgpool/pgpool:4.4.3
@@ -66,22 +69,15 @@ services:
     environment:
       PG_USERNAME: postgres
       PG_PASSWORD: password
-    command: |
-      bash -c "
-      until pg_isready --dbname=postgres --host=postgres_primary --port=5432 --quiet --username=postgres && pg_isready --dbname=postgres --host=standby --port=5432 --quiet --username=postgres
-      do
-      echo 'Waiting for starting both nodes to connect...'
-      sleep 1s
-      done
-      /opt/pgpool-II/bin/start.sh
-      "
     volumes:
       - ddb-volume-failover:/failover_dir
       - ./balancer/pgpool.conf:/config/pgpool.conf
       - ./balancer/failover.sh:/failover.sh
     depends_on:
-      - primary
-      - standby
+      primary:
+        condition: service_healthy
+      standby:
+        condition: service_healthy
 
   filesystems:
     image: alpine

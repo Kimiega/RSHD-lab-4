@@ -1,10 +1,11 @@
 #!/usr/bin/sh
 
-failed_node=$1
-trigger_file=$2
+FAILED_NODE=$1
+TRIGGER_FILE=$2
 
-if [ $failed_node = 1 ]; then 
+if [ $FAILED_NODE = 1 ]; then 
+    echo "Failover ignores node $FAILED_NODE"
     exit 0;
 fi
 
-touch /failover_dir/$trigger_file
+touch /failover_dir/$TRIGGER_FILE

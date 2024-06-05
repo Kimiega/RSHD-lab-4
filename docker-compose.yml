@@ -10,7 +10,7 @@ services:
     volumes:
       - ddb-volume-primary:/data
       - ddb-volume-failover:/failover_dir
-      - ./primary/postgresql.conf:/data/postgres/postgresql.conf
+      - ./primary/postgresql.conf:/config/postgresql.conf
       - ./primary/falloc.sh:/script/falloc.sh
       - ./primary/ffree.sh:/script/ffree.sh
       - ./primary/start.sh:/script/start.sh
@@ -23,7 +23,7 @@ services:
       PGUSER: postgres
       PGPASSWORD: password
       PGDATA: /data/postgres
-    command: postgres -c 'config_file=/data/postgres/postgresql.conf'
+    command: postgres -c 'config_file=/config/postgresql.conf'
     depends_on:
       - filesystems
     healthcheck:
@@ -42,6 +42,7 @@ services:
     volumes:
       - ddb-volume-standby:/data/postgres
       - ddb-volume-failover:/failover_dir
+      - ./standby/start.sh:/script/start.sh
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
@@ -49,7 +50,7 @@ services:
       PGUSER: postgres
       PGPASSWORD: password
       PGDATA: /data/postgres
-    command: postgres -c 'config_file=/data/postgres/postgresql.conf'
+    command: sh /script/start.sh
     depends_on:
       primary:
         condition: service_healthy

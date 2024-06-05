@@ -11,9 +11,9 @@ services:
       - ddb-volume-primary:/data
       - ddb-volume-failover:/failover_dir
       - ./primary/postgresql.conf:/data/postgres/postgresql.conf
-      - ./primary/fill_trash.sh:/fill_trash.sh
-      - ./primary/remove_trash.sh:/remove_trash.sh
-      - ./primary/start.sh:/start.sh
+      - ./primary/falloc.sh:/script/falloc.sh
+      - ./primary/ffree.sh:/script/ffree.sh
+      - ./primary/start.sh:/script/start.sh
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
@@ -72,7 +72,7 @@ services:
     volumes:
       - ddb-volume-failover:/failover_dir
       - ./balancer/pgpool.conf:/config/pgpool.conf
-      - ./balancer/failover.sh:/failover.sh
+      - ./balancer/failover.sh:/script/failover.sh
     depends_on:
       primary:
         condition: service_healthy

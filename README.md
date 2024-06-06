@@ -26,3 +26,22 @@ Then try to insert some rows:
 ```bash
 ./client/run.sh
 ```
+
+Then free acquired by criminal memory:
+
+```bash
+./primary/shell.sh
+sh /script/ffree.sh
+```
+
+Restart docker container with primary:
+
+```bash
+./primary/restart.sh
+```
+
+Then try to insert some rows:
+
+```bash
+./client/run.sh
+```

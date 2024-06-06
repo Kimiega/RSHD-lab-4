@@ -1,7 +1,11 @@
 #!/usr/bin/sh
 
+rm -rf $PGDATA
+
+set -e
+
 pg_basebackup \
-    --pgdata=/data/postgres \
+    --pgdata=$PGDATA \
     --write-recovery-conf \
     --slot=replication_slot \
     --create-slot \

@@ -1,0 +1,28 @@
+ddb-primary exited with code 1
+ddb-pgpool       | 2024-06-06 08:31:28.585: health_check0 pid 98: WARNING:  failed to connect to PostgreSQL server, getaddrinfo() failed with error "Name does not resolve"
+ddb-pgpool       | 2024-06-06 08:31:28.585: health_check0 pid 98: LOG:  health check failed on node 0 (timeout:0)
+ddb-pgpool       | 2024-06-06 08:31:28.585: health_check0 pid 98: LOG:  received degenerate backend request for node_id: 0 from pid [98]
+ddb-pgpool       | 2024-06-06 08:31:28.585: health_check0 pid 98: LOG:  signal_user1_to_parent_with_reason(0)
+ddb-pgpool       | 2024-06-06 08:31:28.586: main pid 62: LOG:  Pgpool-II parent process received SIGUSR1
+ddb-pgpool       | 2024-06-06 08:31:28.586: main pid 62: LOG:  Pgpool-II parent process has received failover request
+ddb-pgpool       | 2024-06-06 08:31:28.586: main pid 62: LOG:  === Starting degeneration. shutdown host primary(5432) ===
+ddb-pgpool       | 2024-06-06 08:31:28.597: main pid 62: LOG:  Restart all children
+ddb-pgpool       | 2024-06-06 08:31:28.597: main pid 62: LOG:  execute command: sh /script/failover.sh  0 down.trg
+ddb-pgpool       | 2024-06-06 08:31:28.609: main pid 62: LOG:  find_primary_node_repeatedly: waiting for finding a primary node
+ddb-pgpool       | 2024-06-06 08:31:28.614: main pid 62: LOG:  find_primary_node: standby node is 1
+ddb-pgpool       | 2024-06-06 08:31:28.614: main pid 62: LOG:  reaper handler
+ddb-pgpool       | 2024-06-06 08:31:29.630: main pid 62: LOG:  find_primary_node: standby node is 1
+ddb-pgpool       | 2024-06-06 08:31:30.640: main pid 62: LOG:  find_primary_node: standby node is 1
+ddb-pgpool       | 2024-06-06 08:31:31.656: main pid 62: LOG:  find_primary_node: standby node is 1
+ddb-pgpool       | 2024-06-06 08:31:32.672: main pid 62: LOG:  find_primary_node: primary node is 1
+ddb-pgpool       | 2024-06-06 08:31:32.673: main pid 62: LOG:  failover: set new primary node: 1
+ddb-pgpool       | 2024-06-06 08:31:32.673: main pid 62: LOG:  failover: set new main node: 1
+ddb-pgpool       | 2024-06-06 08:31:32.688: main pid 62: LOG:  === Failover done. shutdown host primary(5432) ===
+ddb-pgpool       | 2024-06-06 08:31:32.688: sr_check_worker pid 97: LOG:  worker process received restart request
+ddb-pgpool       | 2024-06-06 08:31:33.688: pcp_main pid 96: LOG:  restart request received in pcp child process
+ddb-pgpool       | 2024-06-06 08:31:33.689: main pid 62: LOG:  PCP child 96 exits with status 0 in failover()
+ddb-pgpool       | 2024-06-06 08:31:33.690: main pid 62: LOG:  fork a new PCP child pid 134 in failover()
+ddb-pgpool       | 2024-06-06 08:31:33.690: main pid 62: LOG:  reaper handler
+ddb-pgpool       | 2024-06-06 08:31:33.690: pcp_main pid 134: LOG:  PCP process: 134 started
+ddb-pgpool       | 2024-06-06 08:31:33.691: main pid 62: LOG:  reaper handler: exiting normally
+ddb-pgpool       | 2024-06-06 08:31:33.691: sr_check_worker pid 135: LOG:  process started

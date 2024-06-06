@@ -8,12 +8,23 @@ pg_isready \
     --dbname="postgres" \
     --quiet
 
-if [ "$?" = "0" ]; then
+EXIT_CODE="$?"
+
+set -e
+
+if [ "$EXIT_CODE" = "0" ]; then
     echo "Found available standby. Starting rewind..."
+
+    chown -R postgres:postgres "$PGDATA" &&
+        chmod 700 "$PGDATA"
+
+    chown -R postgres:postgres "$PGDATA/postgresql.conf" &&
+        chmod 700 "$PGDATA/postgresql.conf"
+
     su -p postgres -c "pg_rewind \
-        --config-file=/data/postgres/postgresql.conf \
+        --config-file=$PGDATA/postgresql.conf \
         --source-server='host=standby user=postgres password=password' \
-        --target-pgdata=/data/postgres"
+        --target-pgdata=$PGDATA"
 else
     echo "Available standby was not found. Starting initialization..."
 
@@ -37,4 +48,7 @@ else
 fi
 
 echo "Starting postgres..."
-su -p postgres -c "postgres"
+su -p postgres -c "postgres" &
+
+echo "Waiting..."
+tail -F anything

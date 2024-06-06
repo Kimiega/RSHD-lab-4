@@ -2,4 +2,4 @@
 
 set -e
 
-docker exec -it ddb-postgres-primary sh
+docker exec -it ddb-primary sh

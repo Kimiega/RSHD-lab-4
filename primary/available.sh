@@ -1,0 +1,1 @@
+df -k | grep -e " /data$" | awk '{print $4}'

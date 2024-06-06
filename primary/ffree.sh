@@ -1,3 +1,3 @@
 #!/usr/bin/sh
 
-rm -rf /data/postgres/trashfile
+rm /data/trashfile

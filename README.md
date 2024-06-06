@@ -18,7 +18,7 @@ Then criminal comes out of place:
 
 ```bash
 ./primary/shell.sh
-./criminal/oom.sh
+sh /script/oom.sh
 ```
 
 Then try to insert some rows:

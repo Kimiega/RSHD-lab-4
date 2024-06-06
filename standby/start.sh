@@ -9,10 +9,10 @@ pg_basebackup \
     --host=primary \
     --port=5432
 
-chown -Rf postgres:postgres /data/postgres
-chmod -R 700 /data/postgres
+chown -Rf postgres:postgres $PGDATA
+chmod -R 700 $PGDATA
 
-echo -e "promote_trigger_file = '/failover_dir/down.trg'" \
-    >> /data/postgres/postgresql.conf
+echo "promote_trigger_file = '/failover_dir/down.trg'" >>$PGDATA/postgresql.conf
+echo "wal_log_hints = on" >>$PGDATA/postgresql.conf
 
-su -p postgres -c "postgres -c 'config_file=/data/postgres/postgresql.conf'"
+su -p postgres -c "postgres"

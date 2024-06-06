@@ -2,7 +2,7 @@ services:
 
   primary:
     image: postgres:15-alpine
-    container_name: ddb-postgres-primary
+    container_name: ddb-primary
     ports:
       - "6666:5432"
     networks:
@@ -33,7 +33,7 @@ services:
 
   standby:
     image: postgres:15-alpine
-    container_name: ddb-postgres-standby
+    container_name: ddb-standby
     ports:
       - "7777:5432"
     networks:

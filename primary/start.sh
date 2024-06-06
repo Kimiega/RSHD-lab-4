@@ -12,7 +12,7 @@ if [ "$?" = "0" ]; then
     echo "Found available standby. Starting rewind..."
     su -p postgres -c "pg_rewind \
         --config-file=/data/postgres/postgresql.conf \
-        --source-server='host=postgres_replica user=postgres password=password' \
+        --source-server='host=standby user=postgres password=password' \
         --target-pgdata=/data/postgres"
 else
     echo "Available standby was not found. Starting initialization..."
@@ -32,8 +32,9 @@ else
 
     echo "host all all all md5" >>$PGDATA/pg_hba.conf
     echo "host replication all all md5" >>$PGDATA/pg_hba.conf
+
+    cp /config/postgresql.conf $PGDATA/postgresql.conf
 fi
 
 echo "Starting postgres..."
-su -p postgres -c "
-    postgres -c 'config_file=/config/postgresql.conf'"
+su -p postgres -c "postgres"

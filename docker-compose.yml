@@ -19,12 +19,10 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_HOST_AUTH_METHOD: "md5\nhost replication all all md5"
-      POSTGRES_INITDB_ARGS: "--auth-host=md5"
       PGUSER: postgres
       PGPASSWORD: password
       PGDATA: /data/postgres
-    command: postgres -c 'config_file=/config/postgresql.conf'
+    command: sh /script/start.sh
     depends_on:
       - filesystems
     healthcheck:
